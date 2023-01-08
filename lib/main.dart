@@ -15,15 +15,15 @@ class FullMap extends StatefulWidget {
 }
 
 class FullMapState extends State<FullMap> {
-  MaplibreMapController? mapController;
+  late MaplibreMapController controller;
 
   _onMapCreated(MaplibreMapController controller) {
-    mapController = controller;
+    this.controller = controller;
   }
 
   @override
   void dispose() {
-    mapController!.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -31,10 +31,19 @@ class FullMapState extends State<FullMap> {
   Widget build(BuildContext context) {
     return Scaffold(
         body: MaplibreMap(
+      onMapClick: (point, coordinates) {
+        controller
+            .moveCamera(CameraUpdate.newCameraPosition(const CameraPosition(
+          target: LatLng(50.2833322, 57.166666),
+          tilt: 30.0,
+          zoom: 15.0,
+        )));
+      },
+      styleString: 'assets/demo.json',
       onMapCreated: _onMapCreated,
       onStyleLoadedCallback: () {},
       initialCameraPosition:
-          const CameraPosition(target: LatLng(50.26979, 57.21211), zoom: 0),
+          const CameraPosition(target: LatLng(50.2833322, 57.166666), zoom: 0),
     ));
   }
 }
