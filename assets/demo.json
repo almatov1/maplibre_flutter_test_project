@@ -4,7 +4,7 @@
 	"name":"My Streets",
 	"sources":{
 	   "maptiler_planet":{
-		  "url":"https://api.maptiler.com/tiles/v3/tiles.json?key=T8FsPWh5TbijhHBacm1y",
+		  "url":"https://{s}.data.osmbuildings.org/0.2/anonymous/tile/{z}/{x}/{y}.json",
 		  "type":"vector"
 	   }
 	},

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:maplibre_gl/mapbox_gl.dart';
-import 'package:three_dart/three_dart.dart' as three;
+import 'package:webviewx/webviewx.dart';
 
 void main() => runApp(
       const MaterialApp(
@@ -16,54 +15,124 @@ class FullMap extends StatefulWidget {
 }
 
 class FullMapState extends State<FullMap> {
-  late MaplibreMapController controller;
+  late WebViewXController webviewController;
 
-  _onMapCreated(MaplibreMapController controller) async {
-    this.controller = controller;
+  String bodyHtml = '''
+    <!DOCTYPE html>
+    <html>
 
-    three.PerspectiveCamera camera = three.PerspectiveCamera(40, 1, 0.1, 10);
-    camera.position.z = 3;
+    <head>
+        <meta charset="utf-8" />
+        <title>View local GeoJSON</title>
+        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+        <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+        <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
 
-    three.Scene scene = three.Scene();
-    camera.lookAt(scene.position);
+        <style>
+          body { margin: 0; padding: 0; }
+          #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        </style>
+    </head>
 
-    scene.background = three.Color(1.0, 1.0, 1.0);
-    scene.add(three.AmbientLight(0x222244, null));
+    <body>
+        <div id="map"></div>
+        <script>
+          var map = new maplibregl.Map({
+              style:
+                  'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+              center: [57.1667, 50.2833],
+              zoom: 15.5,
+              pitch: 45,
+              bearing: -17.6,
+              container: 'map',
+              antialias: true
+          });
 
-    var geometryCylinder = three.CylinderGeometry(0.5, 0.5, 1, 32);
-    var materialCylinder = three.MeshPhongMaterial({"color": 0xff0000});
+          var hoveredStateId = null;
+          map.on('load', function () {
+              // Insert the layer beneath any symbol layer.
+              var layers = map.getStyle().layers;
 
-    three.Mesh mesh = three.Mesh(geometryCylinder, materialCylinder);
-    scene.add(mesh);
+              var labelLayerId;
+              for (var i = 0; i < layers.length; i++) {
+                  if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                      labelLayerId = layers[i].id;
+                      break;
+                  }
+              }
 
-    var object = LayerProperties().add();
+              map.addLayer(
+                  {
+                      'id': '3d-buildings',
+                      'source': 'openmaptiles',
+                      'source-layer': 'building',
+                      'filter': ['==', 'extrude', 'true'],
+                      'type': 'fill-extrusion',
+                      'minzoom': 15,
+                      'paint': {
+                          'fill-extrusion-color': '#aaa',
 
-    controller.addLayer('custom', '3d-model', mesh);
-  }
+                          // use an 'interpolate' expression to add a smooth transition effect to the
+                          // buildings as the user zooms in
+                          'fill-extrusion-height': [
+                              'interpolate',
+                              ['linear'],
+                              ['zoom'],
+                              15,
+                              0,
+                              15.05,
+                              ['get', 'height']
+                          ],
+                          'fill-extrusion-base': [
+                              'interpolate',
+                              ['linear'],
+                              ['zoom'],
+                              15,
+                              0,
+                              15.05,
+                              ['get', 'min_height']
+                          ],
+                          'fill-extrusion-opacity': 0.6
+                      }
+                  },
+                  labelLayerId
+              );
+
+              map.on('mousemove', '3d-buildings', function (e) {
+                 document.getElementById('info').innerHTML =
+                  // e.point is the x, y coordinates of the mousemove event relative
+                  // to the top-left corner of the map
+                  JSON.stringify(e.point) +
+                  '<br />' +
+                  // e.lngLat is the longitude, latitude geographical position of the event
+                  JSON.stringify(e.lngLat.wrap());
+              });
+
+             
+
+
+          });
+      </script>
+    </body>
+
+    </html>
+  ''';
 
   @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: MaplibreMap(
-      onMapClick: (point, coordinates) {
-        controller
-            .moveCamera(CameraUpdate.newCameraPosition(const CameraPosition(
-          target: LatLng(50.2833322, 57.166666),
-          tilt: 30.0,
-          zoom: 15.0,
-        )));
-      },
-      styleString: 'assets/demo.json',
-      onMapCreated: _onMapCreated,
-      onStyleLoadedCallback: () {},
-      initialCameraPosition:
-          const CameraPosition(target: LatLng(50.2833322, 57.166666), zoom: 0),
-    ));
+      body: WebViewX(
+        initialContent: bodyHtml,
+        initialSourceType: SourceType.html,
+        onWebViewCreated: (controller) => webviewController = controller,
+        height: MediaQuery.of(context).size.height,
+        width: MediaQuery.of(context).size.width,
+      ),
+    );
   }
 }
