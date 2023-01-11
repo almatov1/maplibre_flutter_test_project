@@ -36,83 +36,46 @@ class FullMapState extends State<FullMap> {
 
     <body>
         <div id="map"></div>
-        <script>
-          var map = new maplibregl.Map({
-              style:
-                  'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
-              center: [57.1667, 50.2833],
-              zoom: 15.5,
-              pitch: 45,
-              bearing: -17.6,
-              container: 'map',
-              antialias: true
-          });
+          <script>
+            var map = new maplibregl.Map({
+                container: 'map',
+                style:
+                    'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
+                zoom: 12,
+                center: [-87.622088, 41.878781]
+            });
 
-          var hoveredStateId = null;
-          map.on('load', function () {
-              // Insert the layer beneath any symbol layer.
-              var layers = map.getStyle().layers;
+            map.on('load', function () {
+                map.addSource('planet_osm_line', {
+                    'type': 'vector',
+                    'tiles': [
+                        'http://localhost:7800/public.planet_osm_line/{z}/{x}/{y}.pbf'
+                    ],
+                    'minzoom': 6,
+                    'maxzoom': 14
+                });
+                map.addLayer(
+                    {
+                        'id': 'public.planet_osm_line-data',
+                        'type': 'line',
+                        'source': 'planet_osm_line',
+                        'source-layer': 'public.planet_osm_line',
+                        'layout': {
+                            'line-cap': 'round',
+                            'line-join': 'round'
+                        },
+                        'paint': {
+                          'line-opacity': 0.6,
+                          'line-color': 'rgb(53, 175, 109)',
+                          'line-width': 2
+                        }
+                    },
+                    'water_name_line'
+                );
+            });
 
-              var labelLayerId;
-              for (var i = 0; i < layers.length; i++) {
-                  if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                      labelLayerId = layers[i].id;
-                      break;
-                  }
-              }
-
-              map.addLayer(
-                  {
-                      'id': '3d-buildings',
-                      'source': 'openmaptiles',
-                      'source-layer': 'building',
-                      'filter': ['==', 'extrude', 'true'],
-                      'type': 'fill-extrusion',
-                      'minzoom': 15,
-                      'paint': {
-                          'fill-extrusion-color': '#aaa',
-
-                          // use an 'interpolate' expression to add a smooth transition effect to the
-                          // buildings as the user zooms in
-                          'fill-extrusion-height': [
-                              'interpolate',
-                              ['linear'],
-                              ['zoom'],
-                              15,
-                              0,
-                              15.05,
-                              ['get', 'height']
-                          ],
-                          'fill-extrusion-base': [
-                              'interpolate',
-                              ['linear'],
-                              ['zoom'],
-                              15,
-                              0,
-                              15.05,
-                              ['get', 'min_height']
-                          ],
-                          'fill-extrusion-opacity': 0.6
-                      }
-                  },
-                  labelLayerId
-              );
-
-              map.on('mousemove', '3d-buildings', function (e) {
-                 document.getElementById('info').innerHTML =
-                  // e.point is the x, y coordinates of the mousemove event relative
-                  // to the top-left corner of the map
-                  JSON.stringify(e.point) +
-                  '<br />' +
-                  // e.lngLat is the longitude, latitude geographical position of the event
-                  JSON.stringify(e.lngLat.wrap());
-              });
-
-             
-
-
-          });
-      </script>
+            map.addControl(new maplibregl.NavigationControl());
+        </script>
     </body>
 
     </html>
