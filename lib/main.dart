@@ -36,45 +36,137 @@ class FullMapState extends State<FullMap> {
 
     <body>
         <div id="map"></div>
-          <script>
+        <script>
             var map = new maplibregl.Map({
                 container: 'map',
-                style:
-                    'https://api.maptiler.com/maps/streets/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL',
-                zoom: 12,
-                center: [-87.622088, 41.878781]
-            });
-
-            map.on('load', function () {
-                map.addSource('planet_osm_line', {
-                    'type': 'vector',
-                    'tiles': [
-                        'http://localhost:7800/public.planet_osm_line/{z}/{x}/{y}.pbf'
-                    ],
-                    'minzoom': 6,
-                    'maxzoom': 14
-                });
-                map.addLayer(
-                    {
-                        'id': 'public.planet_osm_line-data',
-                        'type': 'line',
-                        'source': 'planet_osm_line',
-                        'source-layer': 'public.planet_osm_line',
-                        'layout': {
-                            'line-cap': 'round',
-                            'line-join': 'round'
-                        },
-                        'paint': {
-                          'line-opacity': 0.6,
-                          'line-color': 'rgb(53, 175, 109)',
-                          'line-width': 2
+                style: {
+                    'version': 8,
+                    'sources': {
+                        'raster-tiles': {
+                            'type': 'raster',
+                            'tiles': [
+                                'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg'
+                            ],
+                            'tileSize': 256,
+                            'attribution':
+                                'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
                         }
                     },
-                    'water_name_line'
-                );
+                    'layers': [
+                        {
+                            'id': 'simple-tiles',
+                            'type': 'raster',
+                            'source': 'raster-tiles',
+                            'minzoom': 0,
+                            'maxzoom': 22
+                        }
+                    ]
+                },
+                zoom: 15,
+                center: [57.1667, 50.2833]
             });
 
-            map.addControl(new maplibregl.NavigationControl());
+                map.on('load', function () {
+                  map.addSource('openmaptiles', {
+                      'type': 'geojson',
+                      'data': {
+                        "type": "Feature",
+                        "properties": {
+                          "@id": "way/231206673",
+                          "addr:city": "Актобе",
+                          "addr:housenumber": "111",
+                          "addr:street": "11-й микрорайон",
+                          "building": "apartments",
+                          "building:levels": "9"
+                        },
+                        "geometry": {
+                          "type": "Polygon",
+                          "coordinates": [
+                            [
+                              [
+                                57.1953803,
+                                50.2818373
+                              ],
+                              [
+                                57.1953489,
+                                50.2817299
+                              ],
+                              [
+                                57.1954685,
+                                50.2817156
+                              ],
+                              [
+                                57.1957286,
+                                50.2816844
+                              ],
+                              [
+                                57.1960724,
+                                50.2816433
+                              ],
+                              [
+                                57.1960642,
+                                50.2816154
+                              ],
+                              [
+                                57.1960032,
+                                50.2814072
+                              ],
+                              [
+                                57.1959802,
+                                50.2813286
+                              ],
+                              [
+                                57.1961734,
+                                50.2813055
+                              ],
+                              [
+                                57.196297,
+                                50.2817277
+                              ],
+                              [
+                                57.1953803,
+                                50.2818373
+                              ]
+                            ]
+                          ]
+                        },
+                        "id": "way/231206673"
+                      }
+                  });
+                  map.addLayer({
+                      'id': '3d-buildings',
+                      'source': 'openmaptiles',
+                      'source-layer': 'building',
+                      'filter': ['==', 'extrude', 'true'],
+                      'type': 'fill-extrusion',
+                      'minzoom': 15,
+                      'paint': {
+                        'fill-extrusion-color': '#aaa',
+                        
+                        // use an 'interpolate' expression to add a smooth transition effect to the
+                        // buildings as the user zooms in
+                        'fill-extrusion-height': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'height']
+                        ],
+                        'fill-extrusion-base': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        15,
+                        0,
+                        15.05,
+                        ['get', 'min_height']
+                        ],
+                        'fill-extrusion-opacity': 0.6
+                      }
+                  });
+              });
         </script>
     </body>
 
